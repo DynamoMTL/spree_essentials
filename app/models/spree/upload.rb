@@ -1,19 +1,22 @@
 class Spree::Upload < ::Spree::Asset
-  
+
   attr_accessible :attachment, :alt
-  
+
   validate :no_attachement_errors
-  
+
   has_attached_file :attachment,
     :styles        => Proc.new{ |clip| clip.instance.attachment_sizes },
     :default_style => :medium,
-    :url           => "/spree/uploads/:id/:style/:basename.:extension",
-    :path          => ":rails_root/public/spree/uploads/:id/:style/:basename.:extension"
-  
+    :url           => ":s3_alias_url",
+    :path          => "app/public/spree/uploads/:id/:style/:basename.:extension"
+
+  include Spree::Core::S3Support
+  supports_s3 :attachment
+
   def image_content?
     attachment_content_type.match(/\/(jpeg|png|gif|tiff|x-photoshop)/)
   end
-     
+
   def attachment_sizes
     if image_content?
       { :mini => '48x48>', :small => '150x150>', :medium => '420x300>', :large => '800x500>' }
@@ -21,7 +24,7 @@ class Spree::Upload < ::Spree::Asset
       {}
     end
   end
-  
+
   def no_attachement_errors
     if attachment_file_name.blank? || !attachment.errors.empty?
       # uncomment this to get rid of the less-than-useful interrim messages
